@@ -5,65 +5,97 @@ let target_tile = 7;
 let outcomes = [];
 let igames = 0;
 
+
+/*
+* Plays one move of the game.
+*/ 
 function getMove() {
-	
+
+	// Gets the board state (rows)
 	let rows = get_board();
+	// Adds state to dict
 	if (! (rows in moves)) {
 		create_state(moves, rows);
 	}
-	
+	// Choses an action, providing
+	// the state and the epsilon value
 	let action = choose_action(rows, .1);
 
+	// Update board
 	move_action(action);
-	board.display();
 
 	let new_state = get_board();
 	let old_state = rows;
 
+	// Check if won
 	if (goal_achieved(new_state)) {
+		// Reward the the state
 		update(new_state, action, old_state, Math.pow(target_tile, 2));
 		resetup();
+
+		// Progress trackers I used
 		console.log(games);
 		outcomes.push(1);
 		games ++;
 		igames ++;
+
+
+	// Check if lost
 	} else if (available_actions(new_state).size == 0) {
+		// Punish the state
 		update(new_state, action, old_state, -1);
 		resetup();
+
+		// Progress trackers I used
 		console.log('loss');
 		outcomes.push(0)
 		console.log(get_board_value(new_state))
 		console.log(games);
 		games ++;
 		igames ++;
+
+
+	// No victory, update Q values with no reward.
 	} else {
 		update(new_state, action, old_state, 0);
 	}
 	console.log('move made');
-	/* 
-		
-	*/
 }
 
-function update(new_state, action, old_state, reward) {
 
+/*
+* Updates the Q value at the end of the game
+*/
+function update(new_state, action, old_state, reward) {
+	// Checks if the state exists
 	if (! (new_state in moves)) {
 		create_state(moves, new_state);
 	}
 	
+	// Update Q value
 	let old_val = moves[old_state]['actions'][action];
 	let best_future = moves[new_state]['max'];
 	let new_val = old_val + l_rate * ((reward + best_future) - old_val);
 	moves[old_state]['actions'][action] = new_val;
+
+	// Update old_state's best future
+	// if this is the best future.
 	if (new_val > moves[old_state].max) {
 		moves[old_state].max = new_val;
 	}
 }
 
+/*
+* Choses an action randomly based on
+* the probability specified by the epsilon
+* value. 
+*/
 function choose_action(state, epsilon) {
 	let actions = [];
 	let max_key = null;
 	let max_value = -1;
+	// Finds the best action and collects
+	// actions for random choice.
 	for (const [key, value] of Object.entries(moves[state].actions)) {
 		actions.push(key)
 		if (value > max_value) {
@@ -79,11 +111,17 @@ function choose_action(state, epsilon) {
 	return max_key;
 }
 
+/*
+* Makes a random choice
+*/
 function choose(choices) {
   var index = Math.floor(Math.random() * choices.length);
   return choices[index];
 }
 
+/*
+* Updates the board.
+*/
 function move_action(action) {
 	if (action == 'up') {
 		// board.moveUp();
@@ -98,11 +136,18 @@ function move_action(action) {
 		// board.moveRight();
 		movement.x = 1;
 	}
+
+	// updates the board based on
+	// the movments vector.
+	// Its a vestige on when
+	// this was an actual game.
+	board.display();
 }
 
-
-
-
+/*
+* Converts the boards representation
+* of rows into a 2D array of ints.
+*/
 function get_board() {
 	let rows = board.rows;
 	let new_rows = []
@@ -119,6 +164,9 @@ function get_board() {
 	return new_rows;
 }
 
+/*
+* Function used for state assesment.
+*/
 function get_board_value (rows) {
 	let val = 0;
 	for (let i = 0; i < rows.length; i ++) {
@@ -129,7 +177,11 @@ function get_board_value (rows) {
 	return val;
 }
 
-
+/*
+* Adds a state to the dict provided.
+* A state contains a best expected 
+* value, a dict mapping available actions
+*/
 function create_state(dict, state) {
 	dict[state] = {};
 	let val = 0; // get_board_value(state);
@@ -216,8 +268,18 @@ function goal_achieved(state) {
 }
 
 
-
+/*
+* The game loop that runs the training.
+* I slowly increase the target tile, hoping
+* to create pre existing knowledge about how
+* to get to heigher tiles. Kind of like
+* transfer learning.
+*/
 function get_moves() {
+	// I use igmaes to track the number
+	// of games in one learing period.
+	// igmaes is reset each time, whereas
+	// games is not and has the total.
 	target_tile = 2;
 	while (igames < 400) {
 		getMove();
@@ -252,33 +314,12 @@ function get_moves() {
 	while (igames < 6400) {
 		getMove();
 	}
-	// // convert JSON object to string
-	// let json = JSON.stringify(moves);
-	// var blob = new Blob([json], {type: "application/json"});
-	// var url  = URL.createObjectURL(blob);
-
-	// var a = document.createElement('a');
-	// a.download    = "tam-solver.json";
-	// a.href        = url;
-	// a.textContent = "Download backup.json";
-	// a.style.display = 'none';
-	// document.body.appendChild(a);
-	// a.click();
-	// console.log(games);
-
-	// let first_avg = 0;
-	// let second_avg = 0;
-	// for (let i = 0; i < 20; i++) {
-	// 	let j = i + 40;
-	// 	first_avg += outcomes[i];
-	// 	second_avg += outcomes[j];
-	// }
-	// first_avg /= 20;
-	// second_avg /= 20;
-	// console.log(first_avg);
-	// console.log(second_avg);
 }
 
+
+/*
+* Used to reset the game
+*/
 function resetup() {
   won = false;
   cnv = createCanvas(616, 616);
