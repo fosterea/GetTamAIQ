@@ -12,4 +12,5 @@ I tried to fix the problem of such a vast array of possible boards by training t
 Ultimately, I believe there were too many board states for my algorithm to view, akin to a game of chess. Although, I could be wrong and may have implemented something sub optimally and it might be possible to conquer this problem with Q learning.
 
 You can find my code [here](https://github.com/fosterea/GetTamAIQ)
+
 You can find the gutted website [here](https://fosterea.github.io/GetTamAIQ/)
